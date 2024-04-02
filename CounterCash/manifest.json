@@ -1,0 +1,15 @@
+{
+  "short_name": "CashCounter",
+  "name": "CashCounter",
+  "description": "'Money in the Box' Manager.",
+  "icons": [
+    {
+    
+    }
+  ],
+  "start_url": "/CashCounter",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#E808C4"
+}

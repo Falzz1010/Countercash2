@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+     <!-- Skrip untuk mengimpor pustaka html2pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
+  <!-- Skrip untuk fitur cetak dan ekspor ke PDF -->
+  <script>
+    function printPage() {
+      window.print();
+    }
+
+    function exportToPDF() {
+      const element = document.getElementById('main-content'); // Ganti dengan ID elemen utama Anda
+      html2pdf()
+        .from(element)
+        .save();
+    }
+  </script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JLXEDSL6PZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+
+      gtag('config', 'G-JLXEDSL6PZ');
+    </script>
+    <title>CashCounter</title>
+    <meta name="description" content="Hitung CashCounter :3" />
+    <meta charset="UTF-8" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              laci: '#04364A',
+              blek: '#176B87',
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Dalam tag script -->
+
+
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstati.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" sizes="512x512" href="./src/icon-512x512.png" />
+    <style>
+      * {
+        font-family: 'Martian Mono', Tahoma, Geneva, Verdana, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      input[type='number']::-webkit-outer-spin-button,
+      input[type='number']::-webkit-inner-spin-button,
+      input[type='number'] {
+        -webkit-appearance: none;
+        margin: 0;
+        -moz-appearance: textfield !important;
+      }
+      [x-cloak] {
+        display: none !important;
+      }
+      .btn {
+    padding: 0.3rem 0.75rem; /* Mengurangi padding */
+    margin: 0 0.25rem; /* Mengurangi margin */
+    background-color: rgba(4, 54, 74, 0.8); /* Ubah nilai opacity di sini */
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn:hover {
+    background-color: rgba(23, 107, 135, 0.8); /* Ubah nilai opacity di sini */
+  }
+  @media print {
+    #footer {
+      display: none;
+    }
+  }
+    </style>
+  </head>
+
+  <body class="min-h-screen flex flex-col" x-data="app" x-init="retrieveLaci()">
+    <header class="flex place-content-between items-center">
+      <div class="flex pl-3 items-center gap-1">
+        <p class="text-xl font-bold text-blek">CashCounter</p>
+      </div>
+      <div class="flex mr-3">
+        <button class="h-8 rounded px-3 mr-3 active:scale-90" :class="hitungMode ? 'text-white bg-laci' : 'text-laci bg-white ring-2 ring-laci ring-inset'" @click="hitungMode = !hitungMode">hitung</button>
+        <button class="h-8 text-laci px-3 active:scale-90" @click="resetBtn">reset</button>
+        <a href="#" @click="toggleNeraca" class="h-8 text-laci px-3 active:scale-90">neraca</a>
+        
+      </div>
+
+      
+    </header>
+    <main id="main-content" class="flex flex-col flex-1" x-init="$watch('saldo, dataKas, showNeraca', v => storeLaci(v))">
+      <template x-if="!hitungMode">
+        <section class="p-3 pt-2 text-center text-2xl">
+          <h1 class="rounded-lg bg-blek text-white w-full p-8 font-bold" x-text="format(total())">Rp0</h1>
+        </section>
+      </template>
+      
+ <!-- Bagian untuk menambahkan entri transaksi ke buku besar -->
+<section class="p-3 pt-2 text-center text-white" x-if="showBukuBesar">
+  <div class="rounded-lg w-full p-3 text-l bg-blek flex flex-col gap-3">
+    <h1 class="text-l font-bold mb-4">Tambahkan Entri Transaksi</h1>
+    <form @submit.prevent="tambahTransaksi">
+      <input type="text" x-model="keterangan" placeholder="Keterangan">
+      <input type="number" x-model.number="debit" placeholder="Debit">
+      <input type="number" x-model.number="kredit" placeholder="Kredit">
+      <button type="submit">Tambahkan</button>
+    </form>
+  </div>
+</section>
+
+<!-- Bagian untuk menampilkan total buku besar -->
+<section class="p-3 pt-2 text-center text-white" x-if="showBukuBesar">
+  <div class="rounded-lg w-full p-3 text-l bg-blek flex flex-col gap-3">
+    <h1 class="text-l font-bold mb-4">Buku Besar</h1>
+    <div class="flex justify-between items-center border-b-2 border-laci pb-4">
+      <h1>Keterangan</h1>
+      <h1>Debit</h1>
+      <h1>Kredit</h1>
+    </div>
+    <!-- Data transaksi dari buku besar -->
+    <template x-for="transaksi in bukuBesar">
+      <div class="flex justify-between items-center border-b border-laci py-2">
+        <p x-text="transaksi.keterangan"></p>
+        <p x-text="transaksi.debit"></p>
+        <p x-text="transaksi.kredit"></p>
+      </div>
+    </template>
+    <!-- Tampilkan total debit dan kredit -->
+    <div class="flex justify-between items-center border-t border-laci pt-2">
+      <h1>Total Debit</h1>
+      <h1 x-text="totalDebit()" class="font-bold"></h1>
+    </div>
+    <div class="flex justify-between items-center border-laci">
+      <h1>Total Kredit</h1>
+      <h1 x-text="totalKredit()" class="font-bold"></h1>
+    </div>
+  </div>
+</section>
+
+
+      <template x-if="hitungMode">
+        <section class="p-3 pt-2 text-center text-white">
+          <div class="rounded-lg w-full p-8 text-l bg-blek flex flex-col gap-3">
+            <div class="flex place-content-between items-center h-8">
+              <h1>Data Kas</h1>
+              <div class="flex place-content-end gap-2 w-1/2" x-show="editKas">
+                <input oninput="this.value=this.value.replace(/\./g, '')" class="font-bold bg-white text-right text-laci border-0 rounded focus:shadow-transparent focus:ring-0 py-1 px-2 text-l w-full" type="number" x-model="dataKas" x-on:blur="editKas = !editKas" x-ref="kas" />
+              </div>
+              <div class="flex items-center gap-2 cursor-text" @click="showEditKas()" x-show="!editKas">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                  <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z" />
+                </svg>
+              </div>
+            </div>
+            <div class="flex place-content-between border-b-2 border-laci pb-4">
+              <h1>Total Laci</h1>
+              <h1 x-text="format(total())" class="font-bold"></h1>
+            </div>
+            <div class="flex place-content-between">
+              <h1>Selisih</h1>
+              <div class="flex items-center font-bold gap-2">
+                <h1 x-text="selisih() === 0 ? '0 ' : selisih() >= 0 ? '+' : '-'"></h1>
+                <h1 x-text="selisih() ? format(Math.abs(selisih())) : ''"></h1>
+              </div>
+            </div>
+          </div>
+        </section>
+      </template>
+      <template x-if="showNeraca">
+        <section class="p-3 pt-2 text-center text-white overflow-y-auto max-h-96">
+          <div class="rounded-lg w-full p-3 text-l bg-blek flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <h1>Aset</h1>
+              <h1 x-text="format(totalAset())" class="font-bold"></h1>
+            </div>
+            <template x-for="(satuan, index) in saldo">
+              <template x-if="satuan[0] > 0">
+                <div class="flex justify-between items-center">
+                  <h1 x-text="`${satuan[0]} x ${satuan[1]}`"></h1>
+                  <h1 x-text="format(satuan[0] * satuan[1])" class="font-bold"></h1>
+                </div>
+              </template>
+            </template>
+            <div class="flex justify-between items-center border-t border-laci pt-2">
+              <h1>Total Aset</h1>
+              <h1 x-text="format(totalAset())" class="font-bold"></h1>
+            </div>
+            <div class="flex justify-between items-center">
+              <h1>Kewajiban</h1>
+              <h1 x-text="format(totalKewajiban())" class="font-bold"></h1>
+            </div>
+            
+            <div class="flex justify-between items-center border-t border-laci pt-2">
+              <h1>Selisih</h1>
+              <div class="flex items-center font-bold gap-2">
+                <h1 x-text="selisih() === 0 ? '0 ' : selisih() >= 0 ? '+' : '-'"></h1>
+                <h1 x-text="selisih() ? format(Math.abs(selisih())) : ''"></h1>
+              </div>
+            </div>
+          </div>
+        </section>
+      </template>
+      <section class="p-3 gap-2 flex flex-col">
+        <template x-for="(satuan, index) in saldo">
+          <div class="flex justify-between items-center">
+            <div class="flex gap-2">
+              <img :src="`./src/duit/${index}.png`" :alt="index" />
+              <div class="flex">
+                <button class="rounded bg-laci w-8 h-8 text-white active:scale-90" @click="sub($event.target)">-</button>
+                <div class="grid items-center justify-center text-blek w-16">
+                  <p x-text="satuan[0]"></p>
+                </div>
+                <button class="rounded bg-laci w-8 h-8 text-white active:scale-90" @click="add($event.target)">+</button>
+              </div>
+            </div>
+            <h2 class="text-blek" x-text="format(satuan[0] * satuan[1])">Rp0</h2>
+          </div>
+        </template>
+      </section>
+     
+      <section class="p-3 pt-2 text-center text-white overflow-y-auto max-h-96" x-if="showLaporan">
+        <div class="rounded-lg w-full p-3 text-l bg-blek flex flex-col gap-3">
+          <h1 class="text-l font-bold mb-4">Laporan</h1>
+          <!-- Total Penjualan -->
+          <div class="flex justify-between items-center border-b-2 border-laci pb-4">
+            <h1>Total Penjualan</h1>
+            <h1 x-text="format(totalPenjualan())" class="font-bold"></h1>
+          </div>
+          <!-- Total Pengeluaran -->
+          <div class="flex justify-between items-center border-b-2 border-laci pb-4">
+            <h1>Total Pengeluaran</h1>
+            <h1 x-text="format(totalPengeluaran())" class="font-bold"></h1>
+          </div>
+          <!-- Laba Bersih -->
+          <div class="flex justify-between items-center">
+            <h1>Laba Bersih</h1>
+            <h1 x-text="format(labaBersih())" class="font-bold"></h1>
+          </div>
+        </div>
+        
+      </section>
+      
+      <template x-if="showNeraca">
+        <!-- Bagian atas dari neraca -->
+        <section class="p-3 pt-2 text-center text-white overflow-y-auto max-h-96">
+          <div class="rounded-lg w-full p-3 text-l bg-blek flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <h1>Aset</h1>
+              <h1 x-text="format(totalAset())" class="font-bold"></h1>
+            </div>
+            <template x-for="(satuan, index) in saldo">
+              <template x-if="satuan[0] > 0">
+                <div class="flex justify-between items-center">
+                  <h1 x-text="`${satuan[0]} x ${satuan[1]}`"></h1>
+                  <h1 x-text="format(satuan[0] * satuan[1])" class="font-bold"></h1>
+                </div>
+              </template>
+            </template>
+            <div class="flex justify-between items-center border-t border-laci pt-2">
+              <h1>Total Aset</h1>
+              <h1 x-text="format(totalAset())" class="font-bold"></h1>
+            </div>
+          </div>
+        </section>
+      
+        
+        <!-- Bagian bawah dari neraca -->
+        <section class="p-3 pt-2 text-center text-white overflow-y-auto max-h-96">
+          <div class="rounded-lg w-full p-3 text-l bg-blek flex flex-col gap-3">
+            <div class="flex justify-between items-center border-t border-laci pt-2">
+              <h1>Total Pengeluaran</h1>
+              <h1 x-text="format(totalPengeluaran())" class="font-bold"></h1>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <h1>Kewajiban</h1>
+              <h1 x-text="format(totalKewajiban())" class="font-bold"></h1>
+            </div>
+            <div class="flex justify-between items-center border-t border-laci pt-2">
+              <h1>Selisih</h1>
+              <div class="flex items-center font-bold gap-2">
+                <h1 x-text="selisih() === 0 ? '0 ' : selisih() >= 0 ? '+' : '-'"></h1>
+                <h1 x-text="selisih() ? format(Math.abs(selisih())) : ''"></h1>
+              </div>
+            </div>
+          </div>
+        </section>
+      </template>
+      
+
+
+      
+      <footer id="footer" class="fixed bottom-0 left-0 right-0 p-4 bg-laci text-white flex justify-center">
+        <button class="btn" onclick="printPage()">Cetak</button>
+        <button class="btn" onclick="exportToPDF()">PDF</button>
+    </footer>
+    
+      
+      
+
+    </main>
+    <div id="modal" class="fixed inset-0 flex items-center" :class="modalShown ? '' : 'pointer-events-none'">
+      <div class="bg-black bg-opacity-30 absolute inset-0" @click="modalShown = false" x-cloak x-show="modalShown" x-transition.opacity></div>
+      <div class="bg-white inset-x-0 m-4 p-5 absolute rounded-lg" x-cloak x-show="modalShown" x-transition>
+        <p class="mb-8">apakah anda yakin untuk reset?</p>
+        <div class="flex justify-end gap-3">
+          <button class="active:scale-90 text-laci px-3" @click="modalShown = false">batal</button>
+          <button class="active:scale-90 text-white bg-laci rounded px-3 h-8" @click="resetAll">reset</button>
+        </div>
+      </div>
+    </div>
+
+    
+
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script>
+      const formatter = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      });
+      document.addEventListener('alpine:init', () => {
+        Alpine.data('app', () => ({
+          saldo: {
+            '100k': [0, 100000],
+            '50k': [0, 50000],
+            '20k': [0, 20000],
+            '10k': [0, 10000],
+            '5k': [0, 5000],
+            '2k': [0, 2000],
+            '1k': [0, 1000],
+            '10rt': [0, -10000], // Kewajiban (nilai negatif)
+            '5rt': [0, -5000],    // Kewajiban (nilai negatif)
+            '2rt': [0, -2000],    // Kewajiban (nilai negatif)
+            '1rt': [0, -1000],    // Kewajiban (nilai negatif)
+          },
+    bukuBesar: [], // Tambahkan properti bukuBesar
+    hitungMode: true,
+    modalShown: false,
+    dataKas: null,
+    editKas: false,
+    showNeraca: false,
+    loggedIn: false,
+  username: '',
+  password: '',
+  newPassword: '',
+
+  login() {
+    // Logika untuk proses login
+    // Contoh sederhana: cek apakah username dan password sesuai
+    if (this.username === 'admin' && this.password === 'password') {
+      this.loggedIn = true;
+      this.username = '';
+      this.password = '';
+    } else {
+      alert('Username atau password salah');
+    }
+  },
+
+  logout() {
+    this.loggedIn = false;
+    // Tambahan: tambahkan logika lain jika diperlukan saat logout
+  },
+
+  changePassword() {
+    // Logika untuk mengganti kata sandi
+    // Hanya diakses jika pengguna sudah login
+    if (this.loggedIn) {
+      // Logika untuk mengganti kata sandi
+      // Contoh: simpan kata sandi baru ke database atau variabel lokal
+      alert('Kata sandi berhasil diubah!');
+      this.newPassword = '';
+    } else {
+      alert('Anda harus login untuk mengubah kata sandi');
+    }
+  },
+
+    data() {
+  return {
+    keterangan: '',
+    debit: 0,
+    kredit: 0,
+    bukuBesar: []
+  }
+},
+
+tambahTransaksi() {
+  console.log("Menambahkan transaksi...");
+  const debit = parseInt(this.debit);
+  const kredit = parseInt(this.kredit);
+
+  // Memeriksa apakah nilai debit dan kredit adalah angka yang valid
+  if (!isNaN(debit) && !isNaN(kredit)) {
+    // Memeriksa apakah setidaknya satu di antara debit atau kredit memiliki nilai yang tidak nol
+    if (debit !== 0 || kredit !== 0) {
+      const transaksi = {
+        keterangan: this.keterangan,
+        debit: debit,
+        kredit: kredit
+      };
+    
+      this.bukuBesar.push(transaksi);
+      console.log("Buku Besar setelah transaksi ditambahkan:", this.bukuBesar);
+    
+      // Reset nilai input setelah transaksi ditambahkan
+      this.keterangan = '';
+      this.debit = 0;
+      this.kredit = 0;
+    
+      // Memperbarui tampilan setelah menambahkan transaksi baru
+      this.$forceUpdate();
+    } else {
+      // Menampilkan pesan kesalahan jika kedua nilai debit dan kredit adalah nol
+      alert('Setidaknya satu di antara nilai debit atau kredit harus memiliki nilai yang tidak nol.');
+    }
+  } else {
+    // Menampilkan pesan kesalahan jika nilai debit atau kredit tidak valid
+    alert('Nilai debit dan kredit harus berupa angka yang valid.');
+  }
+},
+
+
+
+
+
+totalDebit() {
+  // Periksa apakah buku besar tidak kosong sebelum menghitung total debit
+  if (this.bukuBesar.length === 0) {
+    return 0;
+  }
+  // Hitung total debit dari semua transaksi dalam buku besar
+  return this.bukuBesar.reduce((total, transaksi) => total + transaksi.debit, 0);
+},
+
+totalKredit() {
+  // Periksa apakah buku besar tidak kosong sebelum menghitung total kredit
+  if (this.bukuBesar.length === 0) {
+    return 0;
+  }
+  // Hitung total kredit dari semua transaksi dalam buku besar
+  return this.bukuBesar.reduce((total, transaksi) => total + transaksi.kredit, 0);
+},
+
+
+
+          add(e) {
+            this.saldo[e.parentElement.previousElementSibling.getAttribute('alt')][0]++;
+          },
+          sub(e) {
+            if (this.saldo[e.parentElement.previousElementSibling.getAttribute('alt')][0] > 0) {
+              this.saldo[e.parentElement.previousElementSibling.getAttribute('alt')][0]--;
+            }
+          },
+          format(e) {
+            return formatter.format(e).replace(/\s/g, '');
+          },
+          total() {
+            let sum = 0;
+            for (let e in this.saldo) {
+              sum += this.saldo[e][0] * this.saldo[e][1];
+            }
+            return sum;
+          },
+          totalAset() {
+            let sum = 0;
+            for (let e in this.saldo) {
+              if (this.saldo[e][1] > 0) {
+                sum += this.saldo[e][0] * this.saldo[e][1];
+              }
+            }
+            return sum;
+          },
+
+          totalPenjualan() {
+  let sum = 0;
+  for (let key in this.saldo) {
+    if (this.saldo[key][1] > 0) { // Periksa apakah nilai uang positif (aset)
+      sum += this.saldo[key][0] * this.saldo[key][1]; // Hitung total penjualan dengan mengalikan jumlah dengan nilai
+    }
+  }
+  return sum;
+},
+totalPengeluaran() {
+  let sum = 0;
+  for (let key in this.saldo) {
+    if (this.saldo[key][1] < 0) { // Periksa apakah nilai uang negatif (kewajiban)
+      sum += this.saldo[key][0] * Math.abs(this.saldo[key][1]); // Gunakan nilai absolut dari kewajiban
+    }
+  }
+  return sum;
+},
+labaBersih() {
+  // Laba bersih adalah total penjualan dikurangi total pengeluaran
+  return this.totalPenjualan() - this.totalPengeluaran();
+},
+
+
+
+totalKewajiban() {
+  let sum = 0;
+  for (let key in this.saldo) {
+    if (this.saldo[key][1] < 0) { // Periksa apakah nilai uang negatif (kewajiban)
+      sum += this.saldo[key][0] * Math.abs(this.saldo[key][1]); // Gunakan nilai absolut dari kewajiban
+    }
+  }
+  return sum;
+},
+
+
+
+          selisih() {
+            return (this.dataKas - this.total()) * -1;
+          },
+          showEditKas() {
+            this.editKas = !this.editKas;
+            this.$nextTick(() => {
+              this.$refs.kas.focus();
+            });
+          },
+          storeLaci(v) {
+    this.totalKewajiban(); // Hitung ulang total kewajiban saat menyimpan data
+    localStorage.setItem('data-laci', JSON.stringify([this.dataKas, this.saldo]));
+},
+
+retrieveLaci() {
+    [this.dataKas, this.saldo] = JSON.parse(localStorage.getItem('data-laci'));
+    this.totalKewajiban(); // Hitung ulang total kewajiban saat mengambil data
+},
+
+
+          resetBtn() {
+            this.modalShown = true;
+          },
+          resetAll() {
+            this.dataKas = 0;
+            for (let a in this.saldo) {
+              this.saldo[a][0] = 0;
+            }
+            this.modalShown = false;
+          },
+          toggleNeraca() {
+            this.showNeraca = !this.showNeraca;
+          },
+        }));
+      });
+
+
+    </script>
+
+
+
+  </body>
+</html>
